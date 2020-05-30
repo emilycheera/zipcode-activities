@@ -10,8 +10,7 @@ class ActivityMicroserviceTests(unittest.TestCase):
 
     def test_valid_entries(self):
         result = self.client.get("/?zipcode=94704&participants=3")
-        encoded_data = result.data.decode("utf-8")
-        data = json.loads(encoded_data)
+        data = result.json
         self.assertEqual(result.status_code, 200)
         self.assertEqual(data["city"], "Berkeley")
 
