@@ -1,6 +1,6 @@
-from helpers import is_valid_zip, is_valid_participants
+from helpers import (is_valid_zip, is_valid_participants, call_zipcode_API, 
+                     call_activity_API, are_entries_valid)
 from flask import Flask, jsonify, request
-import requests
 
 
 app = Flask(__name__)
@@ -13,53 +13,26 @@ def get_random_activity():
     zipcode = request.args.get("zipcode")
     participants = request.args.get("participants")
 
-    result = {}
-
     # Ensure zipcode and partipants are valid
-    if zipcode is None or participants is None:
-        result["error"] = "Zipcode and participants are required parameters"
-        return jsonify(result), 400
-
-    if not is_valid_zip(zipcode):
-        result["error"] = "Invalid entry for zipcode"
-        return jsonify(result), 400
-
-    if not is_valid_participants(participants):
-        result["error"] = "Invalid entry for participants"
+    result = are_entries_valid(zipcode, participants)
+    if result.get("error"):
         return jsonify(result), 400
 
     # Make call to zipcode API
-    zip_res = requests.get(f"http://api.zippopotam.us/us/{zipcode}")
-    
-    if zip_res.status_code != 200:
-        result["error"] = "Could not retrieve city information"
-        return jsonify(result), 500
-    try:
-        zip_res_dict = zip_res.json()
-    except ValueError:
-        result["error"] = "Could not retrieve city information"
-        return jsonify(result), 500
-
-    city = zip_res_dict["places"][0]["place name"]
+    zip_res = call_zipcode_API(zipcode)
+    if zip_res.get("error"):
+        return jsonify(zip_res), 500
+    else:
+        city = zip_res["places"][0]["place name"]
 
     # Make call to activity API
-    activity_res = requests.get("https://www.boredapi.com/api/activity?"
-                               f"participants={participants}")
+    activity_res = call_activity_API(participants)
+    if activity_res.get("error"):
+        return jsonify(activity_res), 500
+    else:
+        activity = activity_res["activity"]
 
-    if activity_res.status_code != 200:
-        result["error"] = "Could not retrieve activity"
-        return jsonify(result), 500
-    try:
-        activity_res_dict = activity_res.json()
-    except ValueError:
-        result["error"] = "Could not retrieve activity"
-        return jsonify(result), 500
-
-    activity = activity_res_dict["activity"]
-
-    result["city"]= city
-    result["activity"] = activity
-    return jsonify(result), 200
+    return jsonify({"city": city, "activity": activity}), 200
 
 
 if __name__ == "__main__":

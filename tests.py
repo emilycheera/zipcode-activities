@@ -7,6 +7,7 @@ class ActivityMicroserviceTests(unittest.TestCase):
 
     def setUp(self):
         self.client = app.test_client()
+        app.config["TESTING"] = True
 
     def test_valid_entries(self):
         result = self.client.get("/activity?zipcode=94704&participants=3")
