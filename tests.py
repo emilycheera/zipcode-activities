@@ -2,6 +2,9 @@ import unittest
 from server import app
 import json
 
+# TODO:
+# Mock API calls
+
 class ActivityMicroserviceTests(unittest.TestCase):
     """Test activity microservice."""
 
